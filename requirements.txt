@@ -1,3 +1,6 @@
 crewai==1.15.28
 ddgs==9.16.0
 streamlit==1.65.0
+requests
+beautifulsoup4
+pypdf

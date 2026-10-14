@@ -51,9 +51,13 @@ def run_research(topic: str, api_key: str, on_status):
     on_status(0, "Working")
     try:
         result = crew.kickoff()
-    except Exception:
-        on_status(min(progress["done"], len(STEPS) - 1), "Failed")
-        raise
+    except Exception as error:
+    failed_index = min(progress["done"], len(STEPS) - 1)
+    on_status(failed_index, "Failed")
+
+    print(f"Research failed: {type(error).__name__}: {error}")
+
+    raise
 
     return {
         "report": str(result.raw),

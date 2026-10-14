@@ -1,36 +1,49 @@
+
+
 from crewai import Agent, Task
 
 from tools.search_tool import search_web
+from tools.web_reader import open_file
 
 
 def create_researcher(llm) -> Agent:
     return Agent(
         role="Web Researcher",
-        goal="Find credible, relevant web sources for every research question.",
-        backstory="You are an expert online researcher. You only report what the search "
-                  "results actually say and you never invent sources or facts.",
+        goal="Find reliable web sources and examine relevant evidence.",
+        backstory=(
+            "You are a careful web researcher. First use search_web "
+            "to discover sources. You may then use open_file with "
+            "the exact HTTPS URL returned by search_web to read a "
+            "relevant page or PDF. Use only registered tools and "
+            "never invent tool names, URLs, or facts."
+        ),
         llm=llm,
-        tools=[search_web],
+        tools=[search_web, open_file],
         allow_delegation=False,
         max_iter=8,
-        verbose=False,
+        verbose=True,
     )
 
 
-def create_researcher_task(agent: Agent, topic: str, plan_task: Task) -> Task:
+
+def create_researcher_task(
+    agent: Agent, topic: str, plan_task: Task
+) -> Task:
     return Task(
         description=(
             f"Research topic: {topic}\n\n"
-            "Use the search_web tool for the queries in the research plan "
-            "(at most 4 searches in total). For each question, note the facts "
-            "found and the exact URL they came from.\n"
-            "STRICT RULES: only use information that appears in the search results. "
-            "Only use URLs that appear in the search results. If nothing was found "
-            "for a question, write 'No evidence found'."
+            "Read the research plan supplied in the context. "
+            "Use search_web for up to four distinct queries. "
+            "Each query must be passed as the tool's 'query' argument. "
+            "Do not attempt to open files or webpages using other tools. "
+            "Use only titles, URLs and snippets returned by search_web.\n\n"
+            "For each research question, provide the available facts, "
+            "the exact source URLs returned by search_web, and any "
+            "evidence gaps. If no evidence is found, say so."
         ),
         expected_output=(
-            "Evidence notes grouped by research question. Every fact is followed by "
-            "its source URL copied from the search results."
+            "Evidence notes grouped by research question, with "
+            "source URLs copied from search results."
         ),
         agent=agent,
         context=[plan_task],
